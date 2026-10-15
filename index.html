@@ -173,7 +173,11 @@ tfoot td{font-weight:700;font-family:var(--font-d);font-size:18px}
     <label class="f">Sauvegarde</label>
     <div class="btns" style="margin-top:0"><button class="btn" id="export-data" type="button">Exporter mes données</button><button class="btn" id="import-data" type="button">Importer</button></div>
     <input type="file" id="import-file" accept="application/json,.json" hidden>
-    <p class="small muted">Tes données sont stockées sur ce téléphone. Exporte une copie de temps en temps.</p>
+    <p class="small muted">Tes données sont stockées sur ce téléphone.</p>
+    <label class="f" for="s-token">Sauvegarde automatique (GitHub)</label>
+    <input type="password" id="s-token" autocomplete="off" placeholder="Clé d'accès au dépôt reprise-data">
+    <p class="small muted" id="sync-status"></p>
+    <div class="btns" style="margin-top:0"><button class="btn" id="sync-now" type="button">Sauvegarder maintenant</button><button class="btn" id="sync-restore" type="button">Restaurer depuis GitHub</button></div>
     <div class="btns"><button class="btn primary" id="save-settings" type="button">Enregistrer</button><button class="btn" id="close-settings" type="button">Fermer</button></div>
   </section>
 
@@ -382,7 +386,7 @@ function fixedSum(acct){return fixedList().filter(function(f){return f.acct===ac
 function monthSpend(acct){var m=todayKey().slice(0,7);return fixedSum(acct)+txs().filter(function(t){return t.acct===acct&&t.date.slice(0,7)===m}).reduce(function(a,t){return a+t.amount},0);}
 
 /* storage (sur le téléphone) */
-function persist(){try{localStorage.setItem(KEY,JSON.stringify(docs));}catch(e){toast("Stockage plein ou bloqué.");}}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(docs));}catch(e){toast("Stockage plein ou bloqué.");}scheduleSync();}
 function save(id,data){docs[id]=data;persist();render();}
 function remove(id){delete docs[id];persist();render();}
 var toastT;function toast(m){var t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('on')},2600);}
@@ -473,7 +477,7 @@ function setTab(t){
 }
 function openSettings(){
   var s=S();$('s-why').value=s.why;$('s-water').value=s.waterGoal;$('s-sport').value=s.sportGoal;
-  $('s-bc').value=s.budgetC||'';$('s-bs').value=s.budgetS||'';$('s-hour').value=s.hour;
+  $('s-bc').value=s.budgetC||'';$('s-bs').value=s.budgetS||'';$('s-hour').value=s.hour;$('s-token').value=getToken();syncStatus();
   $('settings').classList.add('on');$('settings').scrollIntoView({block:'start'});
 }
 function num(id,def,min){var v=parseFloat($(id).value);return isFinite(v)&&v>=min?v:def;}
@@ -552,13 +556,15 @@ document.addEventListener('click',function(e){
   if(t.dataset.delsport){var p=t.dataset.delsport.split('|'),d=docs['sport-'+p[0]];if(!d)return;d=JSON.parse(JSON.stringify(d));d.sessions=d.sessions.filter(function(x){return x.id!==p[1]});return save('sport-'+p[0],d);}
   switch(t.id){
     case 'export-data':return exportData();
+    case 'sync-now':setToken($('s-token').value.trim());return syncNow(false);
+    case 'sync-restore':setToken($('s-token').value.trim());return restoreFromGitHub();
     case 'import-data':return $('import-file').click();
     case 'open-settings':return openSettings();
     case 'close-settings':return $('settings').classList.remove('on');
     case 'save-settings':
       save('settings',{why:$('s-why').value.trim(),waterGoal:num('s-water',DEFAULTS.waterGoal,500),sportGoal:num('s-sport',DEFAULTS.sportGoal,0),
         budgetC:num('s-bc',0,0),budgetS:num('s-bs',0,0),hour:Math.round(num('s-hour',DEFAULTS.hour,5))});
-      $('settings').classList.remove('on');return toast('Réglages enregistrés.');
+      setToken($('s-token').value.trim());$('settings').classList.remove('on');toast('Réglages enregistrés.');if(getToken())syncNow(true);return;
     case 'why-next':factShift++;return render();
     case 'log-sport':return logSport();
     case 'log-money':return logMoney();
@@ -586,9 +592,64 @@ $('import-file').addEventListener('change',function(e){
   r.readAsText(f);e.target.value='';
 });
 
+/* sauvegarde GitHub (dépôt privé reprise-data) */
+var GH={owner:'arthurpro26',repo:'reprise-data',path:'reprise.json'}, syncTimer=null, syncing=false;
+function getToken(){try{return localStorage.getItem(KEY+'-gh')||'';}catch(e){return '';}}
+function setToken(t){try{if(t)localStorage.setItem(KEY+'-gh',t);else localStorage.removeItem(KEY+'-gh');}catch(e){}}
+function getMeta(){try{return JSON.parse(localStorage.getItem(KEY+'-ghmeta')||'{}');}catch(e){return {};}}
+function setMeta(m){try{localStorage.setItem(KEY+'-ghmeta',JSON.stringify(m));}catch(e){}}
+function syncStatus(msg){
+  var el=$('sync-status');if(!el)return;
+  if(msg){el.textContent=msg;return;}
+  var m=getMeta();
+  el.textContent=!getToken()?'Pas de clé : sauvegarde automatique désactivée.':(m.last?'Dernière sauvegarde : '+new Date(m.last).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'Clé enregistrée, pas encore de sauvegarde.');
+}
+function scheduleSync(){if(!getToken())return;clearTimeout(syncTimer);syncTimer=setTimeout(function(){syncNow(true)},4000);}
+function b64(str){return btoa(unescape(encodeURIComponent(str)));}
+function unb64(b){return decodeURIComponent(escape(atob(b.replace(/\n/g,''))));}
+function ghUrl(){return 'https://api.github.com/repos/'+GH.owner+'/'+GH.repo+'/contents/'+GH.path;}
+function ghHeaders(){return {'Authorization':'Bearer '+getToken(),'Accept':'application/vnd.github+json','Content-Type':'application/json'};}
+async function ghGet(){
+  var r=await fetch(ghUrl()+'?t='+Date.now(),{headers:ghHeaders(),cache:'no-store'});
+  if(r.status===404)return null;
+  if(!r.ok)throw new Error('http '+r.status);
+  return r.json();
+}
+async function syncNow(quiet){
+  if(!getToken()){if(!quiet)toast('Colle d\'abord ta clé GitHub.');return;}
+  if(!navigator.onLine){if(!quiet)toast('Pas de réseau. La sauvegarde se fera plus tard.');return;}
+  if(syncing)return;syncing=true;syncStatus('Sauvegarde en cours…');
+  try{
+    var cur=await ghGet(), body={message:'Sauvegarde '+new Date().toISOString(),content:b64(JSON.stringify(docs,null,1))};
+    if(cur&&cur.sha)body.sha=cur.sha;
+    var r=await fetch(ghUrl(),{method:'PUT',headers:ghHeaders(),body:JSON.stringify(body)});
+    if(!r.ok)throw new Error('http '+r.status);
+    setMeta({last:Date.now()});syncStatus();if(!quiet)toast('Sauvegardé sur GitHub.');
+  }catch(e){
+    var m=String(e&&e.message||'');
+    var why=m.indexOf('401')>=0?'Clé invalide ou expirée.':m.indexOf('403')>=0||m.indexOf('404')>=0?'Clé sans accès au dépôt reprise-data.':'Sauvegarde impossible pour le moment.';
+    syncStatus(why);if(!quiet)toast(why);
+  }finally{syncing=false;}
+}
+async function restoreFromGitHub(){
+  if(!getToken()){toast('Colle d\'abord ta clé GitHub.');return;}
+  syncStatus('Restauration…');
+  try{
+    var cur=await ghGet();
+    if(!cur||!cur.content){syncStatus('Aucune sauvegarde trouvée.');toast('Aucune sauvegarde sur GitHub.');return;}
+    var o=JSON.parse(unb64(cur.content));
+    if(!o||typeof o!=='object'||Array.isArray(o))throw 0;
+    docs=o;try{localStorage.setItem(KEY,JSON.stringify(docs));}catch(e){}
+    setMeta({last:Date.now()});render();syncStatus();toast('Données restaurées.');
+  }catch(e){syncStatus('Restauration impossible.');toast('Restauration impossible.');}
+}
+window.addEventListener('online',function(){scheduleSync()});
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'&&getToken()){var m=getMeta();if(!m.last||Date.now()-m.last>6*3600e3)syncNow(true);}});
+
 /* boot */
 try{var raw=localStorage.getItem(KEY);if(raw)docs=JSON.parse(raw)||{};}catch(e){docs={};}
 render();
+if(getToken()){var _m=getMeta();if(!_m.last||Date.now()-_m.last>6*3600e3)setTimeout(function(){syncNow(true)},1500);}
 setInterval(function(){if(document.visibilityState==='visible')render();},60000);
 if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}
 })();
