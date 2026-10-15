@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Reprise</title>
+<meta name="theme-color" content="#07090c">
+<meta name="color-scheme" content="dark light">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Reprise">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+@font-face{font-family:'Barlow';font-style:normal;font-weight:400;font-display:swap;src:url(barlow-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Barlow';font-style:normal;font-weight:500;font-display:swap;src:url(barlow-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Barlow';font-style:normal;font-weight:600;font-display:swap;src:url(barlow-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Barlow';font-style:normal;font-weight:700;font-display:swap;src:url(barlow-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'Barlow Condensed';font-style:normal;font-weight:500;font-display:swap;src:url(barlow-condensed-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Barlow Condensed';font-style:normal;font-weight:600;font-display:swap;src:url(barlow-condensed-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Barlow Condensed';font-style:normal;font-weight:700;font-display:swap;src:url(barlow-condensed-latin-700-normal.woff2) format('woff2')}
+html{background:var(--bg)}
+:root{padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+html,body{overscroll-behavior-y:none}
+
+/* Layout: a dark performance dashboard. Home = three large rings (Effort, Hydratation, Budget) that open their section, then the coach card and two quick-entry cards. Bottom icon bar. Colour carries meaning: blue effort, teal water, green→amber→red budget. */
+:root{
+  --bg:#07090c; --surface:#12161b; --surface2:#1a1f26; --line:#242b34; --ink:#f4f6f8; --muted:#7e8a99; --track:#222a33;
+  --effort:#3f8cff; --water:#27d3c3; --good:#5fe08a; --warn:#f2b441; --over:#ff5a4d; --accent:#3f8cff; --accent-ink:#ffffff;
+  --font-d:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+  --font-b:'Barlow',system-ui,-apple-system,'Segoe UI',sans-serif;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
+  --bg:#eef1f4; --surface:#ffffff; --surface2:#f4f6f8; --line:#dde2e8; --ink:#0c1117; --muted:#667385; --track:#e3e8ee;
+  --effort:#1f6fe0; --water:#0a9f93; --good:#1f9d52; --warn:#c98408; --over:#d6372b; --accent:#1f6fe0; --accent-ink:#ffffff; color-scheme:light;}}
+:root[data-theme="light"]{
+  --bg:#eef1f4; --surface:#ffffff; --surface2:#f4f6f8; --line:#dde2e8; --ink:#0c1117; --muted:#667385; --track:#e3e8ee;
+  --effort:#1f6fe0; --water:#0a9f93; --good:#1f9d52; --warn:#c98408; --over:#d6372b; --accent:#1f6fe0; --accent-ink:#ffffff; color-scheme:light;}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-b);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 104px}
+.wrap{max-width:560px;margin:0 auto}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{margin:0}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:22px 0 18px}
+.top h1{font-family:var(--font-d);font-size:30px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;line-height:1}
+.top .date{color:var(--muted);font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin-top:5px;font-weight:500}
+.iconbtn{border:0;background:var(--surface);border-radius:999px;padding:10px 16px;cursor:pointer;font-size:12px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:var(--muted)}
+.iconbtn[disabled]{opacity:.35;cursor:default}
+.card{background:var(--surface);border-radius:20px;padding:20px;margin-bottom:12px;min-width:0}
+.card h2{font-family:var(--font-b);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.18em;color:var(--muted);margin-bottom:14px}
+.big{font-family:var(--font-d);font-size:52px;font-weight:700;line-height:.95;font-variant-numeric:tabular-nums}
+.big small{font-family:var(--font-b);font-size:13px;color:var(--muted);font-weight:500;letter-spacing:.04em}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.between{justify-content:space-between}
+.muted{color:var(--muted)} .small{font-size:13px}
+
+/* rings */
+.rings{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.rcell{background:var(--surface);border:0;border-radius:20px;padding:16px 6px 14px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;min-width:0}
+.rcell:active{transform:scale(.98)}
+.ring{--p:0;--c:var(--effort);width:min(96px,24vw);aspect-ratio:1;border-radius:50%;
+  background:conic-gradient(var(--c) calc(var(--p)*1%),var(--track) 0);display:grid;place-items:center;position:relative}
+.ring::before{content:"";position:absolute;inset:9px;border-radius:50%;background:var(--surface)}
+.ring>div{position:relative;text-align:center;line-height:1}
+.ring b{font-family:var(--font-d);font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;display:block}
+.ring small{display:block;margin-top:3px;font-size:9px;font-weight:600;letter-spacing:.14em;color:var(--muted)}
+.ring.sp{--c:var(--effort)} .ring.wa{--c:var(--water)} .ring.bu{--c:var(--good)} .ring.bu.warn{--c:var(--warn)} .ring.bu.over{--c:var(--over)}
+.rl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.16em}
+.rs{font-size:11px;color:var(--muted);text-align:center;line-height:1.25}
+
+.why{background:linear-gradient(135deg,var(--surface2),var(--surface));border:1px solid var(--line)}
+.why .mine{font-family:var(--font-d);font-weight:600;font-size:30px;line-height:1.08;margin:0 0 12px;white-space:pre-wrap;text-transform:uppercase;letter-spacing:.01em}
+.why .mine.muted{font-size:20px;text-transform:none;font-family:var(--font-b);font-weight:500}
+.why .fact{margin:0;color:var(--muted);font-size:14px}
+.linkbtn{border:0;background:none;color:var(--effort);font-weight:600;font-size:12px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;padding:12px 0 0;min-height:44px}
+.alert{background:var(--surface);border-left:4px solid var(--warn);border-radius:12px;padding:12px 16px;margin-bottom:12px;font-size:14px}
+
+.bar{height:10px;background:var(--track);border-radius:5px;overflow:hidden;margin:12px 0 8px}
+.bar i{display:block;height:100%;background:var(--good);border-radius:5px;transition:width .5s}
+.bar.water i{background:var(--water)} .bar.sport i{background:var(--effort)}
+.bar.warn i{background:var(--warn)} .bar.over i{background:var(--over)}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.btn{border:0;background:var(--surface2);border-radius:14px;padding:12px 18px;cursor:pointer;font-weight:600;font-size:14px;min-height:46px;color:var(--ink)}
+.btn.sm{padding:8px 16px;min-height:40px;border-radius:999px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:13px}
+.btn.water{background:color-mix(in srgb,var(--water) 16%,transparent);color:var(--water)}
+.btn.grow{flex:1}
+.btn:focus-visible,.iconbtn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.tab:focus-visible,.rcell:focus-visible,.linkbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn[disabled]{opacity:.5;cursor:default}
+label.f{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.16em;color:var(--muted);margin:16px 0 6px;font-weight:600}
+input[type=number],input[type=text],select,textarea{width:100%;background:var(--surface2);border:1px solid transparent;border-radius:12px;padding:12px 14px;min-height:48px}
+input[type=number]:focus,input[type=text]:focus,select:focus,textarea:focus{border-color:var(--accent)}
+textarea{min-height:90px;resize:vertical}
+#smin,#mamt{font-family:var(--font-d);font-size:34px;font-weight:700;min-height:62px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chips input{position:absolute;opacity:0;pointer-events:none}
+.chips label{border-radius:999px;padding:10px 18px;cursor:pointer;background:var(--surface2);font-weight:600;font-size:14px}
+.chips label:has(input:checked){background:var(--effort);color:#fff}
+.chips label:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+.gain .hd{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.gain .what{font-family:var(--font-d);font-size:30px;font-weight:700;text-transform:uppercase;line-height:1}
+.gain .what span{color:var(--muted);font-weight:600}
+.badge{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;border-radius:999px;padding:6px 12px;background:color-mix(in srgb,var(--good) 18%,transparent);color:var(--good)}
+.badge.ok{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+.gain .head{font-size:19px;font-weight:600;line-height:1.25;margin:0 0 16px}
+.gain .b{display:flex;gap:14px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--line)}
+.gain .dot{flex:none;width:34px;height:34px;border-radius:50%;background:color-mix(in srgb,var(--effort) 18%,transparent);color:var(--effort);display:grid;place-items:center;font-family:var(--font-d);font-weight:700;font-size:18px}
+.gain .b strong{display:block;font-size:15px;font-weight:700}
+.gain .b span{display:block;color:var(--muted);font-size:14px;margin-top:1px}
+.gain .next{margin-top:6px;padding:12px 14px;border-radius:12px;background:var(--surface2);font-size:14px}
+.gain .next b{color:var(--effort);text-transform:uppercase;letter-spacing:.12em;font-size:11px;display:block;margin-bottom:2px}
+.view{display:none}.view.on{display:block}
+.result{white-space:pre-wrap;margin:0;font-size:16px;line-height:1.5}
+.list{list-style:none;margin:0;padding:0}
+.list li{display:flex;gap:12px;justify-content:space-between;align-items:flex-start;padding:14px 0;border-top:1px solid var(--line)}
+.list li:first-child{border-top:0;padding-top:0}
+.list .x{border:0;background:none;color:var(--muted);cursor:pointer;font-size:22px;line-height:1;padding:4px 8px;min-height:36px}
+.amt{font-family:var(--font-d);font-weight:700;font-size:26px;font-variant-numeric:tabular-nums;white-space:nowrap;line-height:1}
+.tag{display:inline-block;font-size:10px;text-transform:uppercase;letter-spacing:.12em;background:var(--surface2);border-radius:999px;padding:2px 9px;color:var(--muted);font-weight:600}
+
+.tabs{position:fixed;left:0;right:0;bottom:0;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-top:1px solid var(--line);display:flex;justify-content:center;gap:4px;
+  padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px));z-index:5}
+.tab{flex:1;max-width:130px;border:0;background:none;padding:6px 4px;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:var(--font-b);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);cursor:pointer;border-radius:12px;min-height:48px}
+.tab svg{width:24px;height:24px}
+.tab[aria-selected=true]{color:var(--ink)}
+.tab[aria-selected=true] svg{color:var(--effort)}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{text-align:right;padding:12px 8px;border-top:1px solid var(--line);white-space:nowrap;font-size:14px}
+th:first-child,td:first-child{text-align:left}
+th{font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700;border-top:0}
+tfoot td{font-weight:700;font-family:var(--font-d);font-size:18px}
+.seg{display:flex;background:var(--surface2);border-radius:14px;padding:4px;gap:4px}
+.seg label{flex:1;text-align:center;padding:12px 8px;cursor:pointer;font-weight:600;font-size:14px;border-radius:10px}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label:has(input:checked){background:var(--accent);color:var(--accent-ink)}
+.seg label:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+.sheet{display:none;margin-bottom:12px}.sheet.on{display:block}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:380px){.grid2{grid-template-columns:1fr}}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:999px;font-size:14px;font-weight:600;z-index:9;opacity:0;pointer-events:none;transition:opacity .25s}
+.toast.on{opacity:1}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div><h1>Reprise</h1><div class="date" id="today-label"></div></div>
+    <button class="iconbtn" id="open-settings" type="button">Réglages</button>
+  </header>
+
+  <div class="alert" id="offline" hidden>Mode aperçu : tes données ne sont pas enregistrées. Ouvre la page depuis ton compte pour les conserver.</div>
+
+  <section class="card sheet" id="settings" aria-label="Réglages">
+    <h2>Réglages</h2>
+    <label class="f" for="s-why">Ma raison (s'affiche chaque jour en haut)</label>
+    <textarea id="s-why" placeholder="Pourquoi je fais ça, avec mes mots."></textarea>
+    <div class="grid2">
+      <div><label class="f" for="s-water">Objectif eau (ml/jour)</label><input type="number" id="s-water" inputmode="numeric" min="500" step="50"></div>
+      <div><label class="f" for="s-sport">Objectif sport (min/semaine)</label><input type="number" id="s-sport" inputmode="numeric" min="0" step="5"></div>
+      <div><label class="f" for="s-bc">Plafond mensuel compte courant (€)</label><input type="number" id="s-bc" inputmode="decimal" min="0"></div>
+      <div><label class="f" for="s-bs">Plafond mensuel société (€)</label><input type="number" id="s-bs" inputmode="decimal" min="0"></div>
+      <div><label class="f" for="s-hour">Rappel séance à partir de (heure)</label><input type="number" id="s-hour" inputmode="numeric" min="5" max="23"></div>
+    </div>
+    <label class="f">Sauvegarde</label>
+    <div class="btns" style="margin-top:0"><button class="btn" id="export-data" type="button">Exporter mes données</button><button class="btn" id="import-data" type="button">Importer</button></div>
+    <input type="file" id="import-file" accept="application/json,.json" hidden>
+    <p class="small muted">Tes données sont stockées sur ce téléphone. Exporte une copie de temps en temps.</p>
+    <div class="btns"><button class="btn primary" id="save-settings" type="button">Enregistrer</button><button class="btn" id="close-settings" type="button">Fermer</button></div>
+  </section>
+
+  <!-- AUJOURD'HUI -->
+  <main>
+  <div class="view on" id="v-today">
+    <div id="reminders"></div>
+    <section class="rings" aria-label="Résumé du jour">
+      <button class="rcell" data-go="sport" type="button" aria-label="Effort de la semaine, ouvrir le sport">
+        <div class="ring sp" id="r-sport" data-k="sp"><div><b id="t-sport">0</b><small id="t-sport-goal">MIN</small></div></div>
+        <span class="rl">Effort</span><span class="rs" id="r-sport-sub"></span>
+      </button>
+      <button class="rcell" data-scroll="hydro" type="button" aria-label="Hydratation du jour">
+        <div class="ring wa" id="r-water" data-k="wa"><div><b id="t-water">0</b><small>LITRES</small></div></div>
+        <span class="rl">Eau</span><span class="rs" id="r-water-sub"></span>
+      </button>
+      <button class="rcell" data-go="money" type="button" aria-label="Budget du mois, ouvrir l'argent">
+        <div class="ring bu" id="r-budget" data-k="bu"><div><b id="t-budget">0</b><small>€ / MOIS</small></div></div>
+        <span class="rl">Budget</span><span class="rs" id="r-budget-sub"></span>
+      </button>
+    </section>
+
+    <section class="card why" aria-label="Pourquoi">
+      <h2>Ma raison</h2>
+      <p class="mine" id="why-mine"></p>
+      <p class="fact" id="why-fact"></p>
+      <button class="linkbtn" id="why-next" type="button">Autre rappel →</button>
+    </section>
+
+    <section class="card" id="hydro" aria-label="Hydratation">
+      <h2>Hydratation</h2>
+      <div class="row between"><div class="big"><span id="w-val">0</span></div><div class="small muted" id="w-goal"></div></div>
+      <div class="bar water"><i id="w-bar" style="width:0"></i></div>
+      <div class="small muted" id="w-pct"></div>
+      <div class="btns">
+        <button class="btn water grow" data-water="250" type="button">+ 250 ml</button>
+        <button class="btn water grow" data-water="500" type="button">+ 500 ml</button>
+        <button class="btn water grow" data-water="1000" type="button">+ 1 L</button>
+        <button class="btn" data-water="-250" type="button" aria-label="Retirer 250 ml">− 250</button>
+      </div>
+    </section>
+
+    <section class="card" aria-label="Dépenses du jour">
+      <h2>Dépenses aujourd'hui</h2>
+      <div class="grid2">
+        <div><div class="small muted">Compte courant</div><div class="big" id="m-today-c">0 €</div></div>
+        <div><div class="small muted">Société</div><div class="big" id="m-today-s">0 €</div></div>
+      </div>
+      <div class="btns"><button class="btn primary grow" data-go="money" type="button">+ Dépense</button><button class="btn primary grow" data-go="sport" type="button">+ Séance</button></div>
+    </section>
+  </div>
+
+  <!-- SPORT -->
+  <div class="view" id="v-sport">
+    <section class="card">
+      <h2>Nouvelle séance</h2>
+      <div class="chips" id="sport-types" role="radiogroup" aria-label="Type d'activité">
+        <label><input type="radio" name="stype" value="Vélo" checked><span>Vélo</span></label>
+        <label><input type="radio" name="stype" value="Musculation"><span>Musculation</span></label>
+        <label><input type="radio" name="stype" value="Course"><span>Course</span></label>
+        <label><input type="radio" name="stype" value="Marche"><span>Marche</span></label>
+        <label><input type="radio" name="stype" value="Autre"><span>Autre</span></label>
+      </div>
+      <label class="f" for="smin">Durée (minutes)</label>
+      <div class="chips" style="margin-bottom:10px"><button class="btn sm" data-min="15" type="button">15</button><button class="btn sm" data-min="30" type="button">30</button><button class="btn sm" data-min="45" type="button">45</button><button class="btn sm" data-min="60" type="button">60</button><button class="btn sm" data-min="90" type="button">90</button></div>
+      <input type="number" id="smin" inputmode="numeric" min="1" max="600" placeholder="30">
+      <div class="btns"><button class="btn primary" id="log-sport" type="button">Enregistrer et comprendre</button></div>
+    </section>
+    <section class="card" id="sport-result-card" hidden aria-live="polite">
+      <h2>Ce que ça t'apporte</h2>
+      <div class="gain" id="sport-result"></div>
+    </section>
+    <section class="card">
+      <h2>Cette semaine</h2>
+      <div class="big"><span id="s-week">0</span> <small id="s-week-goal"></small></div>
+      <div class="bar sport"><i id="s-week-bar" style="width:0"></i></div>
+      <ul class="list" id="sport-list"></ul>
+    </section>
+  </div>
+
+  <!-- ARGENT -->
+  <div class="view" id="v-money">
+    <section class="card">
+      <h2>Nouvelle dépense</h2>
+      <div class="seg" role="radiogroup" aria-label="Compte">
+        <label><input type="radio" name="acct" value="courant" checked>Compte courant</label>
+        <label><input type="radio" name="acct" value="societe">Société</label>
+      </div>
+      <div class="grid2">
+        <div><label class="f" for="mamt">Montant (€)</label><input type="number" id="mamt" inputmode="decimal" min="0" step="0.01" placeholder="12,50"></div>
+        <div><label class="f" for="mcat">Catégorie</label>
+          <select id="mcat"><option>Alimentation</option><option>Transport</option><option>Logement</option><option>Abonnements</option><option>Loisirs</option><option>Pro</option><option>Autre</option></select></div>
+      </div>
+      <label class="f" for="mlabel">Libellé</label>
+      <input type="text" id="mlabel" maxlength="80" placeholder="Courses, essence, logiciel…">
+      <div class="btns"><button class="btn primary" id="log-money" type="button">Ajouter</button></div>
+    </section>
+    <section class="card">
+      <h2>Ce mois-ci</h2>
+      <div class="small muted">Compte courant</div>
+      <div class="row between"><div class="big" id="mc-total">0 €</div><div class="small muted" id="mc-goal"></div></div>
+      <div class="bar" id="mc-barwrap"><i id="mc-bar" style="width:0"></i></div>
+      <div class="small muted" style="margin-top:14px">Société</div>
+      <div class="row between"><div class="big" id="ms-total">0 €</div><div class="small muted" id="ms-goal"></div></div>
+      <div class="bar" id="ms-barwrap"><i id="ms-bar" style="width:0"></i></div>
+    </section>
+    <section class="card">
+      <h2>Charges fixes chaque mois</h2>
+      <ul class="list" id="fx-list"></ul>
+      <div class="row between" style="margin-top:12px"><span class="muted small">Total mensuel</span><span class="amt" id="fx-total"></span></div>
+      <label class="f" for="fxlabel">Ajouter une charge fixe</label>
+      <input type="text" id="fxlabel" maxlength="60" placeholder="Abonnement, assurance…">
+      <div class="grid2" style="margin-top:10px"><input type="number" id="fxamt" inputmode="decimal" min="0" step="0.01" placeholder="Montant (€)" aria-label="Montant"><select id="fxacct" aria-label="Compte"><option value="courant">Compte courant</option><option value="societe">Société</option></select></div>
+      <div class="btns"><button class="btn primary" id="add-fixed" type="button">Ajouter</button></div>
+    </section>
+    <section class="card">
+      <h2>Autres dépenses du mois</h2>
+      <ul class="list" id="tx-list"></ul>
+    </section>
+  </div>
+
+  <!-- SEMAINE -->
+  <div class="view" id="v-week">
+    <section class="card">
+      <div class="row between">
+        <button class="iconbtn" id="wk-prev" type="button" aria-label="Semaine précédente">← Préc.</button>
+        <strong id="wk-label"></strong>
+        <button class="iconbtn" id="wk-next" type="button" aria-label="Semaine suivante">Suiv. →</button>
+      </div>
+    </section>
+    <section class="card">
+      <h2>Jour par jour</h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Jour</th><th>Sport</th><th>Eau</th><th>Courant</th><th>Société</th></tr></thead>
+          <tbody id="wk-body"></tbody>
+          <tfoot id="wk-foot"></tfoot>
+        </table>
+      </div>
+    </section>
+    <section class="card">
+      <h2>Résumé écrit</h2>
+      <p class="result" id="wk-text"></p>
+      <div class="btns"><button class="btn primary" id="wk-gen" type="button">Écrire le résumé</button></div>
+    </section>
+  </div>
+  </main>
+</div>
+
+<nav class="tabs" role="tablist" aria-label="Sections">
+  <button class="tab" role="tab" data-tab="today" aria-selected="true" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>Jour</button>
+  <button class="tab" role="tab" data-tab="sport" aria-selected="false" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2.5 5 13.5h6l-1 8 8.5-11h-6z" fill="currentColor"/></svg>Sport</button>
+  <button class="tab" role="tab" data-tab="money" aria-selected="false" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="3.5" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="16.5" cy="12.5" r="1.6" fill="currentColor"/></svg>Argent</button>
+  <button class="tab" role="tab" data-tab="week" aria-selected="false" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 19v-7M12 19V5M18 19v-10" stroke="currentColor" stroke-width="3" stroke-linecap="round" fill="none"/></svg>Semaine</button>
+</nav>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id)};
+var pad=function(n){return String(n).padStart(2,'0')};
+var dkey=function(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
+var parse=function(k){return new Date(k+'T12:00:00')};
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+var eur=function(n){return (n||0).toLocaleString('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:2})};
+var litres=function(ml){return (ml/1000).toLocaleString('fr-FR',{maximumFractionDigits:2})+' L'};
+var todayKey=function(){return dkey(new Date())};
+function weekKeys(off){var m=new Date();m.setHours(12,0,0,0);m.setDate(m.getDate()-((m.getDay()+6)%7)+off*7);
+  var out=[];for(var i=0;i<7;i++){var x=new Date(m);x.setDate(m.getDate()+i);out.push(dkey(x));}return out;}
+
+var DEFAULTS={waterGoal:2500,sportGoal:150,budgetC:0,budgetS:0,hour:18,why:''};
+var KEY='reprise-v1', docs={}, tab='today', weekOff=0, factShift=0;
+
+var FACTS=[
+ "Sport : l'OMS recommande 150 à 300 minutes d'activité d'intensité modérée par semaine chez l'adulte. L'activité régulière est aussi associée à un meilleur sommeil et une meilleure humeur.",
+ "Eau : même une déshydratation légère peut réduire la concentration et augmenter la fatigue. Boire par petites quantités tout au long de la journée fonctionne mieux que rattraper le soir.",
+ "Argent : noter chaque dépense rend le budget visible. Tu décides avant d'acheter au lieu de constater après.",
+ "Régularité : une séance courte faite vaut mieux qu'une longue séance repoussée. Au début, le but est de créer l'habitude, pas la performance.",
+ "Récupération : le muscle se renforce pendant le repos. Les jours sans séance font partie du programme.",
+ "Cadre : des gestes simples répétés chaque jour (bouger, boire, noter) redonnent de la structure. Un petit objectif tenu vaut plus qu'un grand objectif abandonné."
+];
+var SPORT_INFO={
+ 'Vélo':{titre:'Endurance sans choc sur les articulations',b:[['Cœur','Le cœur apprend à pomper plus avec moins d\'efforts.'],['Jambes','Cuisses et fessiers travaillent en continu.'],['Articulations','Pas d\'impact, donc facile à répéter souvent.']]},
+ 'Musculation':{titre:'Tu construis du muscle et des os solides',b:[['Muscle','Chaque séance envoie le signal de se renforcer.'],['Os','La charge densifie les os avec le temps.'],['Énergie','Le corps gère mieux le sucre dans le sang.']]},
+ 'Course':{titre:'Un effort complet pour le souffle et les os',b:[['Souffle','Tu améliores ta capacité à utiliser l\'oxygène.'],['Os','Les impacts renforcent la structure osseuse.'],['Mental','L\'effort régulier aide à relâcher le stress.']]},
+ 'Marche':{titre:'Le geste le plus simple, et il compte',b:[['Circulation','Le sang circule mieux dans tout le corps.'],['Stress','Marcher aide à faire redescendre la pression.'],['Récupération','Facile à enchaîner chaque jour.']]},
+ 'Autre':{titre:'Tout effort qui fait monter le cœur compte',b:[['Cardio','Un rythme cardiaque élevé entraîne ton cœur.'],['Régularité','Bouger souvent compte plus que bouger fort.'],['Habitude','Chaque séance renforce la routine.']]}
+};
+var SPORT_FACTS={
+ 'Vélo':"Le vélo est un effort d'endurance à faible impact : il sollicite le cœur, les poumons, les quadriceps et les fessiers sans solliciter fortement les articulations. Pratiqué régulièrement, il améliore la capacité cardio-respiratoire.",
+ 'Musculation':"La musculation stimule la masse musculaire, la densité osseuse et la sensibilité à l'insuline. Les progrès viennent de la régularité et de la récupération entre les séances.",
+ 'Course':"La course à pied est un effort d'endurance qui améliore la capacité cardio-respiratoire et renforce les os grâce aux impacts. Augmente la durée avant la vitesse.",
+ 'Marche':"La marche rapide compte comme activité d'intensité modérée. Elle améliore la circulation, aide à relâcher le stress et se récupère facilement.",
+ 'Autre':"Toute activité qui fait monter le rythme cardiaque compte dans les 150 minutes hebdomadaires recommandées."
+};
+
+function S(){var s=docs.settings||{};var o={};for(var k in DEFAULTS)o[k]=(s[k]!==undefined&&s[k]!==null)?s[k]:DEFAULTS[k];return o;}
+function sportMin(k){var d=docs['sport-'+k];return d&&d.sessions?d.sessions.reduce(function(a,s){return a+(+s.min||0)},0):0;}
+function water(k){var d=docs['water-'+k];return d?(+d.ml||0):0;}
+function txs(){var out=[];for(var id in docs){if(id.indexOf('tx-')===0){var t=docs[id];out.push({id:id,date:t.date,acct:t.acct,amount:+t.amount||0,label:t.label||'',cat:t.cat||''});}}return out;}
+function spend(k,acct){return txs().filter(function(t){return t.date===k&&t.acct===acct}).reduce(function(a,t){return a+t.amount},0);}
+var DEFAULT_FIXED=[{id:'f1',label:'Loyer',amount:1700,acct:'courant'},{id:'f2',label:'Comptable',amount:350,acct:'societe'},{id:'f3',label:'Loyer bureaux',amount:150,acct:'societe'}];
+function fixedList(){return (docs.fixed&&Array.isArray(docs.fixed.items))?docs.fixed.items:DEFAULT_FIXED;}
+function fixedSum(acct){return fixedList().filter(function(f){return f.acct===acct}).reduce(function(a,f){return a+(+f.amount||0)},0);}
+function monthSpend(acct){var m=todayKey().slice(0,7);return fixedSum(acct)+txs().filter(function(t){return t.acct===acct&&t.date.slice(0,7)===m}).reduce(function(a,t){return a+t.amount},0);}
+
+/* storage (sur le téléphone) */
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(docs));}catch(e){toast("Stockage plein ou bloqué.");}}
+function save(id,data){docs[id]=data;persist();render();}
+function remove(id){delete docs[id];persist();render();}
+var toastT;function toast(m){var t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('on')},2600);}
+
+
+/* render */
+function setRing(id,p,cls){var el=$(id);el.style.setProperty('--p',Math.max(0,Math.min(100,p)));el.className='ring '+el.dataset.k+(cls?' '+cls:'');}
+function bar(id,pct,cls){var el=$(id);el.style.width=Math.max(0,Math.min(100,pct))+'%';if(cls!==undefined){el.parentNode.className='bar '+cls;}}
+function render(){
+  var s=S(), tk=todayKey(), now=new Date();
+  $('today-label').textContent=now.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+  $('offline').hidden=true;
+
+  /* why */
+  var mine=$('why-mine');mine.textContent=s.why||'Écris ta raison dans les réglages. Elle s\'affichera ici chaque jour.';
+  mine.className='mine'+(s.why?'':' muted');
+  var doy=Math.floor((now-new Date(now.getFullYear(),0,0))/864e5);
+  $('why-fact').textContent=FACTS[(doy+factShift)%FACTS.length];
+
+  /* reminders */
+  var wk=weekKeys(0), wkMin=wk.reduce(function(a,k){return a+sportMin(k)},0), tMin=sportMin(tk), ml=water(tk), rem='';
+  if(now.getHours()>=s.hour && tMin===0) rem+='<div class="alert">Aucune séance enregistrée aujourd\'hui. Même 20 minutes comptent.</div>';
+  if(now.getHours()>=14 && ml<s.waterGoal*0.4) rem+='<div class="alert">Eau : '+Math.round(ml/s.waterGoal*100)+' % de l\'objectif. Bois un verre maintenant.</div>';
+  $('reminders').innerHTML=rem;
+
+  /* sport today + sport view */
+  var pct=s.sportGoal?wkMin/s.sportGoal*100:0;
+  $('t-sport').textContent=wkMin; setRing('r-sport',pct); $('r-sport-sub').textContent='Obj. '+s.sportGoal+' min · auj. '+tMin;
+  $('s-week').textContent=wkMin; $('s-week-goal').textContent='/ '+s.sportGoal+' min'; bar('s-week-bar',pct);
+  var items='';
+  wk.slice().reverse().forEach(function(k){var d=docs['sport-'+k];if(!d||!d.sessions)return;
+    d.sessions.slice().reverse().forEach(function(x){
+      items+='<li><div style="min-width:0"><strong>'+esc(x.type)+'</strong> <span class="tag">'+parse(k).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric'})+'</span><div class="small muted">'+esc((x.info&&x.info.titre)||(SPORT_INFO[x.type]&&SPORT_INFO[x.type].titre)||'')+'</div></div><div class="amt">'+(+x.min)+' min</div><button class="x" data-delsport="'+k+'|'+esc(x.id)+'" aria-label="Supprimer la séance" type="button">×</button></li>';});});
+  $('sport-list').innerHTML=items||'<li class="muted">Aucune séance cette semaine. Ta première compte.</li>';
+
+  /* water */
+  var wp=s.waterGoal?ml/s.waterGoal*100:0;
+  $('w-val').textContent=litres(ml); $('w-goal').textContent='Objectif '+litres(s.waterGoal);
+  $('w-pct').textContent=Math.round(wp)+' % atteint'; $('w-bar').style.width=Math.min(100,wp)+'%';
+  $('t-water').textContent=(ml/1000).toLocaleString('fr-FR',{maximumFractionDigits:1}); setRing('r-water',wp); $('r-water-sub').textContent='Obj. '+litres(s.waterGoal);
+
+  /* money */
+  $('m-today-c').textContent=eur(spend(tk,'courant')); $('m-today-s').textContent=eur(spend(tk,'societe'));
+  var mc=monthSpend('courant'), ms2=monthSpend('societe'), bt=(+s.budgetC||0)+(+s.budgetS||0), bp=bt?(mc+ms2)/bt*100:0;
+  $('t-budget').textContent=Math.round(mc+ms2).toLocaleString('fr-FR'); setRing('r-budget',bt?bp:0,bp>100?'over':(bp>80?'warn':''));
+  $('r-budget-sub').textContent=bt?('Plafond '+Math.round(bt).toLocaleString('fr-FR')+' €'):'Plafond à définir';
+  [['c','courant','budgetC'],['s','societe','budgetS']].forEach(function(a){
+    var tot=monthSpend(a[1]), b=+s[a[2]]||0, p=b?tot/b*100:0;
+    $('m'+a[0]+'-total').textContent=eur(tot);
+    $('m'+a[0]+'-goal').textContent=b?('sur '+eur(b)+' · '+Math.round(p)+' %'):'Plafond non défini (Réglages)';
+    bar('m'+a[0]+'-bar',b?p:0, p>100?'over':(p>80?'warn':''));
+  });
+  var m=tk.slice(0,7), list=txs().filter(function(t){return t.date.slice(0,7)===m}).sort(function(a,b){return a.date<b.date?1:(a.date>b.date?-1:(a.id<b.id?1:-1))});
+  $('tx-list').innerHTML=list.map(function(t){
+    return '<li><div style="min-width:0"><strong>'+esc(t.label||t.cat||'Dépense')+'</strong><div class="small muted">'+parse(t.date).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric'})+' · '+esc(t.cat)+' · <span class="tag">'+(t.acct==='societe'?'société':'courant')+'</span></div></div><div class="amt">'+eur(t.amount)+'</div><button class="x" data-deltx="'+esc(t.id)+'" aria-label="Supprimer la dépense" type="button">×</button></li>';
+  }).join('')||'<li class="muted">Aucune dépense ce mois-ci.</li>';
+
+  $('fx-list').innerHTML=fixedList().map(function(f){
+    return '<li><div style="min-width:0"><strong>'+esc(f.label)+'</strong><div class="small muted"><span class="tag">'+(f.acct==='societe'?'société':'courant')+'</span> chaque mois</div></div><div class="amt">'+eur(+f.amount)+'</div><button class="x" data-delfx="'+esc(f.id)+'" aria-label="Supprimer la charge fixe" type="button">×</button></li>';
+  }).join('')||'<li class="muted">Aucune charge fixe.</li>';
+  $('fx-total').textContent=eur(fixedSum('courant')+fixedSum('societe'));
+  renderWeek();
+}
+
+function renderWeek(){
+  var keys=weekKeys(weekOff), tk=todayKey();
+  var a=parse(keys[0]), b=parse(keys[6]);
+  $('wk-label').textContent=a.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+' – '+b.toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+  $('wk-next').disabled=weekOff>=0;
+  var tm=0,tw=0,tc=0,ts=0;
+  $('wk-body').innerHTML=keys.map(function(k){
+    var m=sportMin(k), w=water(k), c=spend(k,'courant'), s=spend(k,'societe'); tm+=m;tw+=w;tc+=c;ts+=s;
+    var fut=k>tk;
+    return '<tr style="'+(k===tk?'font-weight:700':'')+'"><td>'+parse(k).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric'})+'</td><td>'+(fut?'–':m+' min')+'</td><td>'+(fut?'–':litres(w))+'</td><td>'+(fut?'–':eur(c))+'</td><td>'+(fut?'–':eur(s))+'</td></tr>';
+  }).join('');
+  $('wk-foot').innerHTML='<tr><td>Total</td><td>'+tm+' min</td><td>'+litres(tw)+'</td><td>'+eur(tc)+'</td><td>'+eur(ts)+'</td></tr>';
+  var saved=docs['week-'+keys[0]];
+  $('wk-text').textContent=saved&&saved.text?saved.text:'Pas encore de résumé pour cette semaine.';
+  $('wk-gen').textContent=saved&&saved.text?'Réécrire le résumé':'Écrire le résumé';
+}
+
+/* actions */
+function setTab(t){
+  tab=t;
+  ['today','sport','money','week'].forEach(function(n){$('v-'+n).classList.toggle('on',n===t)});
+  document.querySelectorAll('.tab').forEach(function(b){b.setAttribute('aria-selected',b.dataset.tab===t?'true':'false')});
+  window.scrollTo(0,0);
+}
+function openSettings(){
+  var s=S();$('s-why').value=s.why;$('s-water').value=s.waterGoal;$('s-sport').value=s.sportGoal;
+  $('s-bc').value=s.budgetC||'';$('s-bs').value=s.budgetS||'';$('s-hour').value=s.hour;
+  $('settings').classList.add('on');$('settings').scrollIntoView({block:'start'});
+}
+function num(id,def,min){var v=parseFloat($(id).value);return isFinite(v)&&v>=min?v:def;}
+
+function sportCard(type,min,info,wkMin,goal){
+  var lvl=info.niveau==='court'||min<15?'ok':'';
+  var label=info.niveau==='court'||min<15?'Séance courte':(info.niveau==='correct'||min<30?'Bon début':'Excellente durée');
+  var pctW=goal?Math.min(100,Math.round(wkMin/goal*100)):0;
+  var b=(info.benefices||[]).slice(0,3).map(function(x,i){return '<div class="b"><div class="dot">'+(i+1)+'</div><div><strong>'+esc(x.titre)+'</strong><span>'+esc(x.texte)+'</span></div></div>';}).join('');
+  return '<div class="hd"><div class="what">'+esc(type)+' <span>'+min+' min</span></div><div class="badge '+lvl+'">'+label+'</div></div>'+
+    '<p class="head">'+esc(info.titre)+'</p>'+b+
+    '<div class="bar sport"><i style="width:'+pctW+'%"></i></div><div class="small muted">Semaine : '+wkMin+' / '+goal+' min</div>'+
+    (info.suite?'<div class="next" style="margin-top:14px"><b>Pour la suite</b>'+esc(info.suite)+'</div>':'');
+}
+function buildInfo(type,min,wkMin,goal){
+  var f=SPORT_INFO[type]||SPORT_INFO['Autre'];
+  var niveau=min>=30?'bon':(min>=15?'correct':'court');
+  var rest=goal-wkMin, suite;
+  if(rest<=0)suite='Objectif de la semaine atteint. Garde un jour de récupération.';
+  else if(min<30)suite='Vise 30 minutes à ta prochaine séance.';
+  else suite='Encore '+rest+' min pour atteindre ton objectif de la semaine.';
+  return {niveau:niveau,titre:niveau==='court'?'Court, mais tu gardes le rythme':f.titre,
+    benefices:f.b.map(function(x){return {titre:x[0],texte:x[1]}}),suite:suite};
+}
+function logSport(){
+  var type=document.querySelector('input[name=stype]:checked').value, min=Math.round(parseFloat($('smin').value));
+  if(!(min>0)){toast('Indique une durée en minutes.');return;}
+  var tk=todayKey(), id='s'+Date.now().toString(36), goal=S().sportGoal;
+  var wkMin=weekKeys(0).reduce(function(a,k){return a+sportMin(k)},0)+min, info=buildInfo(type,min,wkMin,goal);
+  var d=JSON.parse(JSON.stringify(docs['sport-'+tk]||{date:tk,sessions:[]}));
+  d.sessions.push({id:id,type:type,min:min,info:{titre:info.titre}});
+  save('sport-'+tk,d); $('smin').value='';
+  var card=$('sport-result-card'); card.hidden=false; $('sport-result').innerHTML=sportCard(type,min,info,wkMin,goal);
+  card.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function logMoney(){
+  var amt=parseFloat($('mamt').value);
+  if(!(amt>0)){toast('Indique un montant.');return;}
+  var acct=document.querySelector('input[name=acct]:checked').value;
+  var id='tx-'+Date.now().toString(36);
+  save(id,{date:todayKey(),acct:acct,amount:Math.round(amt*100)/100,label:$('mlabel').value.trim(),cat:$('mcat').value});
+  $('mamt').value='';$('mlabel').value='';toast('Dépense ajoutée.');
+}
+
+function genWeek(){
+  var keys=weekKeys(weekOff), s=S(), tk=todayKey(), past=keys.filter(function(k){return k<=tk});
+  if(!past.length){toast('Cette semaine n\'a pas commencé.');return;}
+  var tm=0,tc=0,ts=0,tw=0,active=0,waterOk=0;
+  var lines=past.map(function(k){var m=sportMin(k),w=water(k),c=spend(k,'courant'),so=spend(k,'societe');
+    tm+=m;tw+=w;tc+=c;ts+=so;if(m>0)active++;if(w>=s.waterGoal)waterOk++;
+    return parse(k).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric'}).replace(/^./,function(x){return x.toUpperCase()})+' : sport '+m+' min · eau '+litres(w)+' · courant '+eur(c)+' · société '+eur(so);});
+  var pct=s.sportGoal?Math.round(tm/s.sportGoal*100):0, avgW=Math.round(tw/past.length);
+  var t='Sport : '+tm+' min sur '+s.sportGoal+' ('+pct+' %), '+active+' jour'+(active>1?'s':'')+' actif'+(active>1?'s':'')+'.\n'+
+        'Eau : objectif atteint '+waterOk+' jour'+(waterOk>1?'s':'')+' sur '+past.length+', moyenne '+litres(avgW)+' par jour.\n'+
+        'Dépenses variables : '+eur(tc)+' (courant), '+eur(ts)+' (société).\n\n'+lines.join('\n')+'\n\nPour la suite\n';
+  t+=(tm>=s.sportGoal?'• Sport : objectif atteint. Garde ce rythme et un jour de récupération.\n':'• Sport : il manque '+(s.sportGoal-tm)+' min. Trois séances de 30 minutes suffisent.\n');
+  t+=(avgW>=s.waterGoal?'• Eau : très bien, la moyenne tient l\'objectif.\n':'• Eau : boire un verre au réveil et à chaque repas fait monter la moyenne.\n');
+  var mc=monthSpend('courant'),ms=monthSpend('societe');
+  if(s.budgetC&&mc>s.budgetC)t+='• Argent : le plafond du compte courant est dépassé ce mois-ci ('+eur(mc)+' / '+eur(s.budgetC)+').';
+  else if(s.budgetS&&ms>s.budgetS)t+='• Argent : le plafond société est dépassé ce mois-ci ('+eur(ms)+' / '+eur(s.budgetS)+').';
+  else t+='• Argent : continue de noter chaque dépense le jour même.';
+  save('week-'+keys[0],{text:t,week:keys[0]});
+}
+
+/* events */
+document.addEventListener('click',function(e){
+  var t=e.target.closest('button,[data-tab]');if(!t)return;
+  if(t.dataset.tab)return setTab(t.dataset.tab);
+  if(t.dataset.go)return setTab(t.dataset.go);
+  if(t.dataset.scroll){var el=$(t.dataset.scroll);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});return;}
+  if(t.dataset.min){$('smin').value=t.dataset.min;return;}
+  if(t.dataset.water){var tk=todayKey(),v=Math.max(0,water(tk)+parseInt(t.dataset.water,10));return save('water-'+tk,{date:tk,ml:v});}
+  if(t.dataset.delfx){return save('fixed',{items:fixedList().filter(function(f){return f.id!==t.dataset.delfx})});}
+  if(t.dataset.deltx){return remove(t.dataset.deltx);}
+  if(t.dataset.delsport){var p=t.dataset.delsport.split('|'),d=docs['sport-'+p[0]];if(!d)return;d=JSON.parse(JSON.stringify(d));d.sessions=d.sessions.filter(function(x){return x.id!==p[1]});return save('sport-'+p[0],d);}
+  switch(t.id){
+    case 'export-data':return exportData();
+    case 'import-data':return $('import-file').click();
+    case 'open-settings':return openSettings();
+    case 'close-settings':return $('settings').classList.remove('on');
+    case 'save-settings':
+      save('settings',{why:$('s-why').value.trim(),waterGoal:num('s-water',DEFAULTS.waterGoal,500),sportGoal:num('s-sport',DEFAULTS.sportGoal,0),
+        budgetC:num('s-bc',0,0),budgetS:num('s-bs',0,0),hour:Math.round(num('s-hour',DEFAULTS.hour,5))});
+      $('settings').classList.remove('on');return toast('Réglages enregistrés.');
+    case 'why-next':factShift++;return render();
+    case 'log-sport':return logSport();
+    case 'log-money':return logMoney();
+    case 'add-fixed':
+      var fa=parseFloat($('fxamt').value), fl=$('fxlabel').value.trim();
+      if(!(fa>0)||!fl){toast('Indique un libellé et un montant.');return;}
+      save('fixed',{items:fixedList().concat([{id:'f'+Date.now().toString(36),label:fl,amount:Math.round(fa*100)/100,acct:$('fxacct').value}])});
+      $('fxlabel').value='';$('fxamt').value='';return toast('Charge fixe ajoutée.');
+    case 'wk-prev':weekOff--;return renderWeek();
+    case 'wk-next':if(weekOff<0)weekOff++;return renderWeek();
+    case 'wk-gen':return genWeek();
+  }
+});
+
+/* sauvegarde */
+async function exportData(){
+  var name='reprise-'+todayKey()+'.json', blob=new Blob([JSON.stringify(docs,null,1)],{type:'application/json'});
+  try{var f=new File([blob],name,{type:'application/json'});
+    if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'Sauvegarde Reprise'});return;}}catch(e){if(e&&e.name==='AbortError')return;}
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();
+}
+$('import-file').addEventListener('change',function(e){
+  var f=e.target.files[0];if(!f)return;var r=new FileReader();
+  r.onload=function(){try{var o=JSON.parse(r.result);if(!o||typeof o!=='object'||Array.isArray(o))throw 0;docs=o;persist();render();toast('Données importées.');}catch(x){toast('Fichier invalide.');}};
+  r.readAsText(f);e.target.value='';
+});
+
+/* boot */
+try{var raw=localStorage.getItem(KEY);if(raw)docs=JSON.parse(raw)||{};}catch(e){docs={};}
+render();
+setInterval(function(){if(document.visibilityState==='visible')render();},60000);
+if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}
+})();
+</script>
+</body>
+</html>

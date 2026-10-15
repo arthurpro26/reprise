@@ -1,0 +1,20 @@
+REPRISE - version installable (fonctionne sans réseau)
+
+METTRE EN LIGNE (GitHub Pages, une seule fois)
+1. Sur github.com, crée un compte si besoin, puis : "+" en haut à droite > New repository.
+2. Nom : reprise. Mets-le en Public. Clique "Create repository".
+3. Clique "uploading an existing file". Dézippe ce dossier, puis glisse TOUT son contenu
+   (index.html, sw.js, manifest.webmanifest, dossiers icons et fonts) dans la page. Clique "Commit changes".
+4. Va dans Settings > Pages. Source : "Deploy from a branch", branche "main", dossier "/ (root)". Save.
+5. Après 1 à 2 minutes, ton lien apparaît : https://TON-PSEUDO.github.io/reprise/
+
+SUR L'IPHONE
+Ouvre le lien dans Safari > Partager > Sur l'écran d'accueil > Ajouter.
+Ouvre l'appli une première fois avec du réseau : elle se met alors en mémoire et marche ensuite sans réseau.
+
+MISES À JOUR
+Quand je te donne une nouvelle version, remplace les fichiers dans le dépôt (Add file > Upload files).
+Rouvre l'appli deux fois pour voir la nouvelle version.
+
+TES DONNÉES
+Elles restent sur ton téléphone. Réglages > Exporter mes données fait une copie de sauvegarde.
